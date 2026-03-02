@@ -9,20 +9,24 @@ COPY . .
 RUN npm run build
 
 # ── Stage 2: Serve ────────────────────────────────────────────────────────────
-FROM node:20-alpine AS runner
+# Use the official nginx image – nginx is properly configured out of the box
+FROM nginx:alpine AS runner
+
+# Add Node.js for the mock API server
+RUN apk add --no-cache nodejs \
+  # Remove the default nginx site
+  && rm -f /etc/nginx/conf.d/default.conf
 
 ENV PORT=80
-
-RUN apk add --no-cache nginx gettext \
-  && mkdir -p /run/nginx \
-  && rm -f /etc/nginx/http.d/default.conf
 
 WORKDIR /app
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY simple-api-server.cjs ./
-# Store as template – entrypoint runs envsubst at startup
-COPY nginx.conf /etc/nginx/http.d/default.conf.template
+
+# nginx:alpine automatically runs envsubst on *.template files in this dir
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+
 COPY docker-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
