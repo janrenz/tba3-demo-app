@@ -32,7 +32,7 @@ RUN chmod +x /entrypoint.sh
 
 EXPOSE ${PORT}
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s \
   CMD wget -qO- http://localhost:${PORT}/healthz || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
