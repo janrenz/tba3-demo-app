@@ -12,7 +12,11 @@ RUN npm run build
 FROM node:20-alpine AS runner
 
 # nginx + supervisor
-RUN apk add --no-cache nginx supervisor
+RUN apk add --no-cache nginx supervisor \
+  # nginx on Alpine needs these runtime dirs
+  && mkdir -p /run/nginx /var/cache/nginx /var/log/nginx \
+  # remove default server config that conflicts with ours
+  && rm -f /etc/nginx/http.d/default.conf
 
 WORKDIR /app
 
