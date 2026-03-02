@@ -169,7 +169,7 @@ const drawMaterialCard = (pdf, material, y, qrDataUrl) => {
   // Type badge — show "MUNDO" for external materials
   const isExternal = material.source === 'mundo';
   const badgeColor = isExternal ? '#1d4ed8' : '#2563eb';
-  const badgeLabel = isExternal ? 'MUNDO' : safe(type?.label ?? material.type);
+  const badgeLabel = isExternal ? 'MUNDO' : (safe(type?.label ?? material.type) || '?');
   const [tr, tg, tb] = hexToRgb(badgeColor);
   pdf.setFillColor(tr, tg, tb);
   pdf.roundedRect(MARGIN + 3, y + 3, 22, 4.5, 1, 1, 'F');
@@ -178,19 +178,22 @@ const drawMaterialCard = (pdf, material, y, qrDataUrl) => {
 
   // Duration (skip for external materials)
   if (!isExternal) {
-    setFont(pdf, 7, 'normal', [107, 114, 128]);
-    pdf.text(`${safe(material.duration)}`, MARGIN + 27, y + 6.2);
+    const dur = safe(material.duration);
+    if (dur) {
+      setFont(pdf, 7, 'normal', [107, 114, 128]);
+      pdf.text(dur, MARGIN + 27, y + 6.2);
+    }
   }
 
   // Title
   setFont(pdf, 9.5, 'bold', [17, 24, 39]);
-  const titleLines = pdf.splitTextToSize(safe(material.title), TEXT_W);
-  pdf.text(titleLines.slice(0, 2), MARGIN + 3, y + 13);
+  const titleLines = pdf.splitTextToSize(safe(material.title) || '(kein Titel)', TEXT_W);
+  if (titleLines.length > 0) pdf.text(titleLines.slice(0, 2), MARGIN + 3, y + 13);
 
   // Description
   setFont(pdf, 7.5, 'normal', [75, 85, 99]);
-  const descLines = pdf.splitTextToSize(safe(material.description), TEXT_W);
-  pdf.text(descLines.slice(0, 2), MARGIN + 3, y + 20);
+  const descLines = pdf.splitTextToSize(safe(material.description) || '', TEXT_W);
+  if (descLines.length > 0) pdf.text(descLines.slice(0, 2), MARGIN + 3, y + 20);
 
   // Target levels
   const levelKeys = material.targetLevels ?? [];
@@ -207,9 +210,11 @@ const drawMaterialCard = (pdf, material, y, qrDataUrl) => {
   });
 
   // URL (blue, left column – full TEXT_W available)
-  setFont(pdf, 6.5, 'normal', [37, 99, 235]);
-  const shortUrl = url.length > 68 ? url.slice(0, 68) + '…' : url;
-  pdf.text(shortUrl, MARGIN + 3, y + 32);
+  if (url) {
+    setFont(pdf, 6.5, 'normal', [37, 99, 235]);
+    const shortUrl = url.length > 68 ? url.slice(0, 68) + '…' : url;
+    pdf.text(shortUrl, MARGIN + 3, y + 32);
+  }
 };
 
 // ── Public entry point ────────────────────────────────────────────────────────
