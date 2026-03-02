@@ -253,7 +253,10 @@ export const exportPDF = async (assignments, filterGroupId = null, extraGroups =
         .map(async (materialId) => {
           if (qrCache[materialId]) return;
           const material = allMaterials.find((m) => m.id === materialId);
-          if (material) qrCache[materialId] = await generateQR(material.url ?? getMaterialUrl(material));
+          if (material) {
+            const qrUrl = material.url || getMaterialUrl(material);
+            try { qrCache[materialId] = await generateQR(qrUrl); } catch { /* skip QR for this material */ }
+          }
         })
     )
   );
