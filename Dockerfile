@@ -11,28 +11,21 @@ RUN npm run build
 # ── Stage 2: Serve ────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 
-# nginx + supervisor
-RUN apk add --no-cache nginx supervisor \
-  # nginx on Alpine needs these runtime dirs
-  && mkdir -p /run/nginx /var/cache/nginx /var/log/nginx \
-  # remove default server config that conflicts with ours
+RUN apk add --no-cache nginx \
+  && mkdir -p /run/nginx \
   && rm -f /etc/nginx/http.d/default.conf
 
 WORKDIR /app
 
-# Static assets from build stage
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Mock API server
 COPY simple-api-server.cjs ./
-
-# Config files
 COPY nginx.conf /etc/nginx/http.d/default.conf
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
   CMD wget -qO- http://localhost/healthz || exit 1
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+ENTRYPOINT ["/entrypoint.sh"]
