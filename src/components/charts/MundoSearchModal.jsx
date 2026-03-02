@@ -55,7 +55,7 @@ const parseContentItems = (payload) => {
     // For LtiLinkItem, MUNDO sends no direct URL – derive it from the SODIX ID
     // in custom.mn: https://mundo.schule/material/<SODIX-ID>
     const sodixId = item.custom?.mn || item.custom?.id;
-    const sodixUrl = sodixId ? `https://mundo.schule/material/${sodixId}` : null;
+    const sodixUrl = sodixId ? `https://mundo.schule/details/${sodixId}` : null;
 
     const url =
       item.url ||
