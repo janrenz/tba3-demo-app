@@ -50,14 +50,20 @@ const parseContentItems = (payload) => {
   return graph.map((item) => {
     console.log('[MUNDO LTI] item:', JSON.stringify(item));
 
-    // @id in JSON-LD is often a local reference like "item1", not a real URL.
+    // @id in JSON-LD is often a local reference like ":item1", not a real URL.
     // Only use it as URL if it actually looks like one.
+    // For LtiLinkItem, MUNDO sends no direct URL – derive it from the SODIX ID
+    // in custom.mn: https://mundo.schule/material/<SODIX-ID>
+    const sodixId = item.custom?.mn || item.custom?.id;
+    const sodixUrl = sodixId ? `https://mundo.schule/material/${sodixId}` : null;
+
     const url =
       item.url ||
       item.launch_url ||
       item.href ||
       item.canonicalUrl ||
       (isAbsoluteUrl(item['@id']) ? item['@id'] : null) ||
+      sodixUrl ||
       '';
 
     const title = item.title || item.text || item.label || 'MUNDO Material';
