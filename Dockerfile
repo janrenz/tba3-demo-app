@@ -12,6 +12,11 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
+# MCP-Server-Dependencies im Builder (Runner hat nur node, kein npm)
+COPY mcp-server/package*.json mcp-server/
+COPY mcp-server/server-impl.js mcp-server/index.js mcp-server/server-http.js mcp-server/
+RUN cd /app/mcp-server && npm ci --omit=dev
+
 # ── Stage 2: Serve ────────────────────────────────────────────────────────────
 # Use the official nginx image – nginx is properly configured out of the box
 FROM nginx:alpine AS runner
@@ -28,10 +33,8 @@ WORKDIR /app
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY simple-api-server.cjs ./
 
-# MCP server (läuft im selben Container)
-COPY mcp-server/package*.json mcp-server/
-COPY mcp-server/server-impl.js mcp-server/index.js mcp-server/server-http.js mcp-server/
-RUN cd /app/mcp-server && npm ci --omit=dev
+# MCP server (fertig mit node_modules aus Builder)
+COPY --from=builder /app/mcp-server /app/mcp-server
 
 # nginx:alpine automatically runs envsubst on *.template files in this dir
 COPY nginx.conf /etc/nginx/templates/default.conf.template

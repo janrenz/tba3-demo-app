@@ -65,12 +65,13 @@ const HelpView = () => {
           </pre>
           <p className="text-gray-700 font-medium mt-4">Claude</p>
           <p className="text-gray-600">
-            Konfigurationsdatei bearbeiten (Einstellungen → Developer → Edit Config): macOS <code className="bg-gray-100 px-1 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code>, Windows <code className="bg-gray-100 px-1 rounded">%APPDATA%\\Claude\\claude_desktop_config.json</code>. MCP-Server per URL hinzufügen:
+            Konfigurationsdatei bearbeiten (Einstellungen → Developer → Edit Config): macOS <code className="bg-gray-100 px-1 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code>, Windows <code className="bg-gray-100 px-1 rounded">%APPDATA%\\Claude\\claude_desktop_config.json</code>. MCP-Server mit Typ <strong>sse</strong> und URL eintragen:
           </p>
           <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto mt-2">
 {`{
   "mcpServers": {
     "tba3-results": {
+      "type": "sse",
       "url": "${mcpHttpUrl}"
     }
   }
