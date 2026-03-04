@@ -1,0 +1,15 @@
+{
+  "name": "tba3-results-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server to interact with TBA3 assessment result data",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "serve": "node server-http.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.0"
+  }
+}
