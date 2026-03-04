@@ -3,6 +3,12 @@
  * Shown in the "Hilfe" tab of the dashboard.
  */
 const HelpView = () => {
+  const mcpHttpUrl =
+    import.meta.env.VITE_MCP_HTTP_URL ||
+    (typeof window !== 'undefined'
+      ? `${window.location.origin}/mcp`
+      : 'https://ihr-mcp-server.example/mcp');
+
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
@@ -62,8 +68,8 @@ const HelpView = () => {
         <div className="p-5 space-y-4 text-sm">
           <p className="text-gray-700">
             Endpunkt: <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">POST /mcp</code>.
-            In Cursor unter Einstellungen → MCP einen <strong>Streamable HTTP</strong>-Server anlegen und die URL
-            eintragen, z. B. <code className="bg-gray-100 px-1 rounded">https://ihr-server.example/mcp</code>.
+            In Cursor unter Einstellungen → MCP einen <strong>Streamable HTTP</strong>-Server anlegen und als URL
+            <code className="bg-gray-100 px-1 ml-1 rounded">{mcpHttpUrl}</code> eintragen.
           </p>
           <p className="text-gray-600">
             Das Docker-Image wird in der CI als <code className="bg-gray-100 px-1 rounded">…-mcp</code> gebaut.
