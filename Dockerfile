@@ -2,6 +2,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Frontend ruft API über gleichen Host auf (kein CORS): /tba3-api → Nginx proxy zu apps.indibit.eu
+ARG VITE_API_BASE_URL=/tba3-api
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 COPY package*.json ./
 RUN npm ci
 
