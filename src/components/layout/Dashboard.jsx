@@ -5,6 +5,7 @@ import ItemStatisticsChart from '../charts/ItemStatisticsChart';
 import AggregationsView from '../charts/AggregationsView';
 import EducationalMaterialsPanel from '../charts/EducationalMaterialsPanel';
 import StudentsPanel from '../charts/StudentsPanel';
+import HelpView from '../HelpView';
 
 const Dashboard = () => {
   const { selectedLevel, getSelectedId } = useFilters();
@@ -31,6 +32,7 @@ const Dashboard = () => {
     { id: 'aggregations', label: 'Aggregationen', icon: '📉' },
     { id: 'students', label: 'Schüler*innen', icon: '👥' },
     { id: 'materials', label: 'Lernmaterialien', icon: '📚' },
+    { id: 'help', label: 'Hilfe', icon: '📖' },
   ];
 
   return (
@@ -87,6 +89,10 @@ const Dashboard = () => {
 
           {activeTab === 'materials' && (
             <EducationalMaterialsPanel />
+          )}
+
+          {activeTab === 'help' && (
+            <HelpView />
           )}
         </div>
       </div>

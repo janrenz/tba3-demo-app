@@ -58,10 +58,10 @@ const buildMaterialHtml = (material, group, levelKey) => {
   <div class="subtitle">${xmlEscape(material.source === 'mundo' ? 'MUNDO (extern)' : (type?.label ?? material.type))} · ${xmlEscape(material.duration ?? '')}</div>
 
   <div class="meta">
-    <span class="badge" style="background:${subject?.color ?? '#6b7280'}">${xmlEscape(subject?.name ?? material.subject)}</span>
-    <span class="badge" style="background:#6b7280">${xmlEscape(grade?.name ?? material.grade)}</span>
+    ${subject ? `<span class="badge" style="background:${subject.color ?? '#6b7280'}">${xmlEscape(subject.name)}</span>` : ''}
+    ${grade ? `<span class="badge" style="background:#6b7280">${xmlEscape(grade.name)}</span>` : ''}
     <span class="badge" style="background:#2563eb">Gruppe: ${xmlEscape(group.name)}</span>
-    <span class="badge" style="background:${level?.color ?? '#6b7280'}">Stufe ${xmlEscape(levelKey)}: ${xmlEscape(level?.description ?? '')}</span>
+    ${level ? `<span class="badge" style="background:${level.color ?? '#6b7280'}">Stufe ${xmlEscape(levelKey)}: ${xmlEscape(level.description ?? '')}</span>` : ''}
   </div>
 
   <div class="section">
@@ -107,17 +107,24 @@ const buildManifest = (items) => {
     byGroup[item.group.id].byLevel[item.levelKey].push(item);
   });
 
-  const levelOrder = ['I', 'II', 'III', 'IV', 'V'];
+  const STANDARD_LEVEL_ORDER = ['I', 'II', 'III', 'IV', 'V'];
 
   // Build <item> tree
   const orgItems = Object.values(byGroup)
     .map(({ group, byLevel }) => {
       const groupItemId = `org_group_${toId(group.id)}`;
-      const levelItems = levelOrder
-        .filter((lk) => byLevel[lk])
+      // Include all level keys: standard order first, then any extras (e.g. '_all')
+      const knownKeys = new Set(STANDARD_LEVEL_ORDER);
+      const extraKeys = Object.keys(byLevel).filter((k) => !knownKeys.has(k));
+      const allLevelKeys = [...STANDARD_LEVEL_ORDER.filter((k) => byLevel[k]), ...extraKeys];
+
+      const levelItems = allLevelKeys
         .map((lk) => {
           const level = COMPETENCE_LEVELS[lk];
-          const levelItemId = `org_${toId(group.id)}_level_${lk}`;
+          const levelItemId = `org_${toId(group.id)}_level_${toId(lk)}`;
+          const levelTitle = level
+            ? `Kompetenzstufe ${lk} – ${xmlEscape(level.description ?? '')}`
+            : 'Zugewiesene Materialien';
           const matItems = byLevel[lk]
             .map(
               ({ resourceId, material }) =>
@@ -127,7 +134,7 @@ const buildManifest = (items) => {
             )
             .join('\n');
           return `      <item identifier="${levelItemId}">
-        <title>Kompetenzstufe ${lk} – ${xmlEscape(level?.description ?? '')}</title>
+        <title>${levelTitle}</title>
 ${matItems}
       </item>`;
         })

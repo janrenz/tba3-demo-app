@@ -147,7 +147,7 @@ const drawLevelBar = (pdf, levelKey, y) => {
   pdf.text(`Kompetenzstufe ${levelKey}  –  ${safe(cfg.description)}`, MARGIN + 6, y + 5);
 };
 
-const CARD_H = 34;
+const CARD_H = 38;
 const QR_SIZE = 26;
 const TEXT_W = CONTENT_W - QR_SIZE - 10;
 
@@ -213,7 +213,7 @@ const drawMaterialCard = (pdf, material, y, qrDataUrl) => {
   if (url) {
     setFont(pdf, 6.5, 'normal', [37, 99, 235]);
     const shortUrl = url.length > 68 ? url.slice(0, 68) + '…' : url;
-    pdf.text(shortUrl, MARGIN + 3, y + 32);
+    pdf.text(shortUrl, MARGIN + 3, y + 35);
   }
 };
 
