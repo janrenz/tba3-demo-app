@@ -16,108 +16,68 @@ const HelpView = () => {
           MCP-Server für TBA3-Ergebnisdaten
         </h2>
         <p className="text-gray-600 text-sm">
-          Über den TBA3 Results MCP-Server können KI-Assistenten (z. B. Cursor, Claude) direkt auf
-          Kompetenzstufen, Aggregationen und Item-Statistiken zugreifen.
+          Der MCP-Server läuft <strong>auf dem Server in Docker</strong>. Lokal richten Sie nur die Verbindung ein – keine Installation, kein Projekt-Checkout nötig.
         </p>
       </div>
 
-      {/* Connection: Claude (stdio) */}
+      {/* Server: Docker */}
       <section className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-900">In Claude verbinden (lokal)</h3>
+          <h3 className="font-semibold text-gray-900">Auf dem Server: MCP-Server in Docker betreiben</h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Claude Desktop startet den MCP-Server als Prozess (stdio). Konfiguration über <code className="bg-gray-100 px-1 rounded">claude_desktop_config.json</code>.
+            Container starten, Umgebungsvariable setzen – fertig.
           </p>
         </div>
         <div className="p-5 space-y-4 text-sm">
           <p className="text-gray-700">
-            <strong>Konfigurationsdatei</strong> (je nach System):
+            Der MCP-Server wird als eigenes Docker-Image (z. B. <code className="bg-gray-100 px-1 rounded">ghcr.io/…/…-mcp</code>) bereitgestellt. Auf dem Server Container starten und <strong>TBA3_API_BASE_URL</strong> auf die TBA3-API setzen (z. B. Ihre Mock- oder Backend-API). Der Endpunkt für Clients ist <code className="bg-gray-100 px-1 rounded">POST /mcp</code> (Streamable HTTP).
           </p>
-          <ul className="list-disc list-inside text-gray-600 space-y-1">
-            <li>macOS: <code className="bg-gray-100 px-1 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
-            <li>Windows: <code className="bg-gray-100 px-1 rounded">%APPDATA%\Claude\claude_desktop_config.json</code></li>
-            <li>Linux: <code className="bg-gray-100 px-1 rounded">~/.config/Claude/claude_desktop_config.json</code></li>
-          </ul>
           <p className="text-gray-600">
-            In Claude Desktop: <strong>Einstellungen → Developer → Edit Config</strong>, oder die Datei direkt bearbeiten.
-          </p>
-          <div>
-            <p className="text-gray-600 mb-2">Beispiel-Konfiguration (Pfad zum Projekt anpassen):</p>
-            <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">
-{`{
-  "mcpServers": {
-    "tba3-results": {
-      "command": "node",
-      "args": ["/Pfad/zu/Ihrem/Projekt/mcp-server/index.js"],
-      "env": {
-        "TBA3_API_BASE_URL": "http://localhost:8000"
-      }
-    }
-  }
-}`}
-            </pre>
-          </div>
-          <p className="text-gray-600">
-            <strong>args</strong>: absoluter Pfad zu <code className="bg-gray-100 px-1 rounded">mcp-server/index.js</code> im ausgecheckten Projekt.
-            <strong>TBA3_API_BASE_URL</strong>: Basis-URL der TBA3-API (z. B. Mock-Server auf Port 8000).
-            Vor dem ersten Start: <code className="bg-gray-100 px-1 rounded">cd mcp-server && npm install</code>.
-            Nach Änderungen an der Config Claude Desktop vollständig neu starten.
+            Beispiel: <code className="bg-gray-100 px-1 rounded">docker run -e TBA3_API_BASE_URL=https://api.example.com -p 3000:3000 …-mcp</code>. Die URL, die Cursor/Claude brauchen, ist dann <code className="bg-gray-100 px-1 rounded">https://ihr-server/mcp</code> (je nach Reverse-Proxy/Ingress).
           </p>
         </div>
       </section>
 
-      {/* Connection: Cursor (stdio) */}
+      {/* Client: nur URL eintragen */}
       <section className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-900">In Cursor verbinden (lokal)</h3>
+          <h3 className="font-semibold text-gray-900">Lokal: In Cursor oder Claude verbinden</h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Der Server läuft als Prozess und kommuniziert per stdio mit Cursor.
+            Nur die Server-URL eintragen – kein Node, kein mcp-server-Checkout.
           </p>
         </div>
         <div className="p-5 space-y-4 text-sm">
           <p className="text-gray-700">
-            <strong>Anlegen:</strong> Im Projektroot (dort, wo der Ordner <code className="bg-gray-100 px-1 rounded">mcp-server</code> liegt) Ordner <code className="bg-gray-100 px-1 rounded">.cursor</code> anlegen und darin die Datei <code className="bg-gray-100 px-1 rounded">mcp.json</code> mit folgendem Inhalt speichern. Cursor startet den Server automatisch. Nach Änderungen Cursor neu starten oder Fenster neu laden.
+            MCP-Server-URL (von Ihrem Deployment): <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-800 break-all">{mcpHttpUrl}</code>
           </p>
-          <div>
-            <p className="text-gray-600 mb-2">Inhalt für <code className="bg-gray-100 px-1 rounded">.cursor/mcp.json</code> (zum Kopieren):</p>
-            <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">
+          <p className="text-gray-700 font-medium">Cursor</p>
+          <p className="text-gray-600">
+            Einstellungen → MCP → „Add new MCP server“ → Typ <strong>Streamable HTTP</strong>, URL: die obige Adresse. Oder im Projekt <code className="bg-gray-100 px-1 rounded">.cursor/mcp.json</code> anlegen:
+          </p>
+          <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto mt-2">
 {`{
   "mcpServers": {
     "tba3-results": {
-      "command": "node",
-      "args": ["mcp-server/index.js"],
-      "env": {
-        "TBA3_API_BASE_URL": "http://localhost:8000"
-      }
+      "url": "${mcpHttpUrl}"
     }
   }
 }`}
-            </pre>
-          </div>
+          </pre>
+          <p className="text-gray-700 font-medium mt-4">Claude</p>
           <p className="text-gray-600">
-            <strong>TBA3_API_BASE_URL</strong> muss auf Ihre TBA3-API zeigen (z. B. Mock-Server auf Port 8000).
-            Vor dem Verbinden: <code className="bg-gray-100 px-1 rounded">cd mcp-server && npm install</code> ausführen.
+            Konfigurationsdatei bearbeiten (Einstellungen → Developer → Edit Config): macOS <code className="bg-gray-100 px-1 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code>, Windows <code className="bg-gray-100 px-1 rounded">%APPDATA%\\Claude\\claude_desktop_config.json</code>. MCP-Server per URL hinzufügen:
           </p>
-        </div>
-      </section>
-
-      {/* Connection: HTTP (deployed) */}
-      <section className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-900">Per HTTP verbinden (Deployment)</h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Wenn der MCP-Server als Container läuft, nutzt er Streamable HTTP.
-          </p>
-        </div>
-        <div className="p-5 space-y-4 text-sm">
-          <p className="text-gray-700">
-            Endpunkt: <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">POST /mcp</code>.
-            In Cursor unter Einstellungen → MCP einen <strong>Streamable HTTP</strong>-Server anlegen und als URL
-            <code className="bg-gray-100 px-1 ml-1 rounded">{mcpHttpUrl}</code> eintragen.
-          </p>
-          <p className="text-gray-600">
-            Das Docker-Image wird in der CI als <code className="bg-gray-100 px-1 rounded">…-mcp</code> gebaut.
-            Im Container die Umgebungsvariable <strong>TBA3_API_BASE_URL</strong> auf die TBA3-API setzen.
+          <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto mt-2">
+{`{
+  "mcpServers": {
+    "tba3-results": {
+      "url": "${mcpHttpUrl}"
+    }
+  }
+}`}
+          </pre>
+          <p className="text-gray-500 text-xs mt-2">
+            Wenn Ihre Claude-Version nur „command“-Server unterstützt, den MCP-Server lokal mit <code className="bg-gray-100 px-1 rounded">node mcp-server/index.js</code> starten und in der Config command/args verwenden (siehe Projekt-README).
           </p>
         </div>
       </section>
