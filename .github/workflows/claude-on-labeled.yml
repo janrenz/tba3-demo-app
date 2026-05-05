@@ -1,0 +1,86 @@
+name: Claude on Labeled
+# Triggered when the "claude-implement" label is added to an issue.
+# Parses spec_file and identifier from HTML comments in the issue body,
+# then delegates to reusable-claude-implement.yml.
+
+on:
+  issues:
+    types: [labeled]
+
+# One run at a time per issue — queues instead of running in parallel.
+concurrency:
+  group: claude-implement-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  parse:
+    if: github.event.label.name == 'claude-implement'
+    runs-on: ubuntu-latest
+    outputs:
+      spec_file: ${{ steps.parse.outputs.spec_file }}
+      identifier: ${{ steps.parse.outputs.identifier }}
+      issue_number: ${{ steps.parse.outputs.issue_number }}
+      branch_prefix: ${{ steps.parse.outputs.branch_prefix }}
+      should_implement: ${{ steps.check.outputs.should_implement }}
+    steps:
+      - name: Parse spec metadata from issue body
+        id: parse
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+          SPEC_FILE=$(echo "$BODY" | tr -d '\r' | grep '<!-- spec-file:' | sed 's/.*<!-- spec-file:\([^ ]*\) -->.*/\1/' || true)
+          IDENTIFIER=$(echo "$BODY" | tr -d '\r' | grep '<!-- identifier:' | sed 's/.*<!-- identifier:\([^ ]*\) -->.*/\1/' || true)
+          if [ -z "$SPEC_FILE" ] || [ -z "$IDENTIFIER" ]; then
+            echo "No spec metadata found in issue body — skipping"
+            exit 1
+          fi
+          BRANCH_PREFIX=$(echo "$BODY" | tr -d '\r' | grep '<!-- branch-prefix:' | sed 's/.*<!-- branch-prefix:\([^ ]*\) -->.*/\1/' || true)
+          [ -n "$BRANCH_PREFIX" ] || BRANCH_PREFIX="req"
+          echo "spec_file=$SPEC_FILE" >> "$GITHUB_OUTPUT"
+          echo "identifier=$IDENTIFIER" >> "$GITHUB_OUTPUT"
+          echo "branch_prefix=$BRANCH_PREFIX" >> "$GITHUB_OUTPUT"
+          echo "issue_number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Check for existing branch or PR
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="${{ steps.parse.outputs.branch_prefix }}/${{ steps.parse.outputs.identifier }}"
+
+          if git ls-remote --exit-code --heads \
+              "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" \
+              "$BRANCH" > /dev/null 2>&1; then
+            echo "Branch '$BRANCH' already exists — skipping duplicate run"
+            echo "should_implement=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PR_COUNT=$(gh pr list --repo "${{ github.repository }}" --head "$BRANCH" --state open --json number --jq 'length')
+          if [ "$PR_COUNT" -gt 0 ]; then
+            echo "Open PR for '$BRANCH' already exists — skipping duplicate run"
+            echo "should_implement=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_implement=true" >> "$GITHUB_OUTPUT"
+
+  implement:
+    needs: parse
+    if: needs.parse.outputs.should_implement == 'true'
+    uses: FWU-DE/skills/.github/workflows/reusable-claude-implement.yml@main
+    with:
+      spec_file: ${{ needs.parse.outputs.spec_file }}
+      identifier: ${{ needs.parse.outputs.identifier }}
+      branch_prefix: ${{ needs.parse.outputs.branch_prefix }}
+      issue_number: ${{ needs.parse.outputs.issue_number }}
+      ci_command: 'npm run lint && npm run build'
+    secrets: inherit
