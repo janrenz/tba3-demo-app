@@ -52,6 +52,89 @@ const GRADES = [
   { code: "V8", name: "Klasse 8", description: "Vergleichsarbeiten Klasse 8" },
 ];
 
+const EDUCATIONAL_MATERIALS = [
+  {
+    id: "msk-ma-v3-01",
+    title: "MSK Vor-Check: Natuerliche Zahlen",
+    type: "diagnostic",
+    subject: "MA",
+    grade: "V3",
+    targetLevels: ["I", "II", "III"],
+    source: "msk",
+    url: "https://mathe-sicher-koennen.dzlm.de/material-primar/ueber-das-material",
+  },
+  {
+    id: "msk-ma-v3-02",
+    title: "MSK Foerderbaustein: Stellenwertverstaendnis",
+    type: "support",
+    subject: "MA",
+    grade: "V3",
+    targetLevels: ["I", "II"],
+    source: "msk",
+    url: "https://mathe-sicher-koennen.dzlm.de/material-primar/ueber-das-material",
+  },
+  {
+    id: "msk-ma-v3-03",
+    title: "MSK Auswertungshilfe: Typische Fehlermuster",
+    type: "didactic",
+    subject: "MA",
+    grade: "V3",
+    targetLevels: ["I", "II", "III"],
+    source: "msk",
+    url: "https://mathe-sicher-koennen.dzlm.de/material-primar/ueber-das-material",
+  },
+  {
+    id: "msk-ma-v8-01",
+    title: "MSK Vor-Check: Zahlenstrahl und Operationsverstaendnis",
+    type: "diagnostic",
+    subject: "MA",
+    grade: "V8",
+    targetLevels: ["I", "II", "III"],
+    source: "msk",
+    url: "https://mathe-sicher-koennen.dzlm.de/material-sek/%C3%BCber-die-mathe-sicher-k%C3%B6nnen-diagnose-und-f%C3%B6rdermaterialien",
+  },
+  {
+    id: "msk-ma-v8-02",
+    title: "MSK Foerderbaustein: Zahlenstrahl",
+    type: "support",
+    subject: "MA",
+    grade: "V8",
+    targetLevels: ["I", "II", "III"],
+    source: "msk",
+    url: "https://mathe-sicher-koennen.dzlm.de/material-sek/%C3%BCber-die-mathe-sicher-k%C3%B6nnen-diagnose-und-f%C3%B6rdermaterialien",
+  },
+  {
+    id: "msk-ma-v8-03",
+    title: "MSK Foerderbaustein: Brueche, Prozente, Dezimalzahlen",
+    type: "support",
+    subject: "MA",
+    grade: "V8",
+    targetLevels: ["II", "III", "IV"],
+    source: "msk",
+    url: "https://mathe-sicher-koennen.dzlm.de/material-sek/%C3%BCber-die-mathe-sicher-k%C3%B6nnen-diagnose-und-f%C3%B6rdermaterialien",
+  },
+  {
+    id: "msk-ma-v8-04",
+    title: "MSK Didaktischer Kommentar",
+    type: "didactic",
+    subject: "MA",
+    grade: "V8",
+    targetLevels: ["I", "II", "III", "IV", "V"],
+    source: "msk",
+    url: "https://mathe-sicher-koennen.dzlm.de/material-sek/%C3%BCber-die-mathe-sicher-k%C3%B6nnen-diagnose-und-f%C3%B6rdermaterialien",
+  },
+  {
+    id: "msk-ma-v8-05",
+    title: "MSK Online-Check und Dashboard-Hinweise",
+    type: "info",
+    subject: "MA",
+    grade: "V8",
+    targetLevels: ["I", "II", "III", "IV", "V"],
+    source: "msk",
+    url: "https://mathe-sicher-koennen.dzlm.de/online-check",
+  },
+];
+
 export const ENTITIES = {
   groups: GROUPS.map((g) => g.id),
   schools: SCHOOLS.map((s) => s.id),
@@ -59,7 +142,11 @@ export const ENTITIES = {
 };
 
 async function fetchApi(path, params = {}) {
-  const url = new URL(path, API_BASE);
+  // Concatenate manually so that path prefixes in API_BASE (e.g. ".../tba3-api")
+  // are preserved — `new URL("/foo", base)` would discard them.
+  const base = API_BASE.replace(/\/$/, "");
+  const rel = path.startsWith("/") ? path : `/${path}`;
+  const url = new URL(`${base}${rel}`);
   Object.entries(params).forEach(([k, v]) => {
     if (v != null && v !== "") url.searchParams.set(k, String(v));
   });
@@ -76,6 +163,46 @@ export function createMcpServer() {
     name: "tba3-results",
     version: "1.0.0",
   });
+
+  server.registerTool(
+    "tba3_list_materials",
+    {
+      title: "List educational materials (including MSK set)",
+      description:
+        "List educational materials from the demo catalog. Supports filtering by source (e.g. msk), subject, grade, type and target competence level.",
+      inputSchema: {
+        source: z.string().optional().describe("Material source, e.g. msk"),
+        subject: z
+          .enum(["DE", "MA", "EN", "FR"])
+          .optional()
+          .describe("Filter by subject"),
+        grade: z
+          .enum(["V3", "V8"])
+          .optional()
+          .describe("Filter by grade"),
+        type: z.string().optional().describe("Filter by material type, e.g. diagnostic, support, didactic"),
+        targetLevel: z
+          .enum(["I", "II", "III", "IV", "V"])
+          .optional()
+          .describe("Filter by target competence level"),
+      },
+    },
+    async ({ source, subject, grade, type, targetLevel }) => {
+      const items = EDUCATIONAL_MATERIALS.filter((m) => {
+        if (source && m.source !== source) return false;
+        if (subject && m.subject !== subject) return false;
+        if (grade && m.grade !== grade) return false;
+        if (type && m.type !== type) return false;
+        if (targetLevel && !m.targetLevels.includes(targetLevel)) return false;
+        return true;
+      });
+      const data = { count: items.length, items };
+      return {
+        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        structuredContent: data,
+      };
+    }
+  );
 
   server.registerTool(
     "tba3_list_entities",
@@ -169,7 +296,7 @@ export function createMcpServer() {
         const data = await fetchApi(path, type ? { type } : {});
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-          structuredContent: data,
+          structuredContent: Array.isArray(data) ? { valueGroups: data } : data,
         };
       } catch (err) {
         return {
@@ -200,7 +327,7 @@ export function createMcpServer() {
         const data = await fetchApi(path, type ? { type } : {});
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-          structuredContent: data,
+          structuredContent: Array.isArray(data) ? { valueGroups: data } : data,
         };
       } catch (err) {
         return {
@@ -231,7 +358,7 @@ export function createMcpServer() {
         const data = await fetchApi(path, type ? { type } : {});
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-          structuredContent: data,
+          structuredContent: Array.isArray(data) ? { valueGroups: data } : data,
         };
       } catch (err) {
         return {
