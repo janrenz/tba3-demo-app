@@ -311,20 +311,26 @@ export function createMcpServer() {
     "tba3_get_aggregations",
     {
       title: "Get TBA3 aggregations",
-      description: "Fetch aggregation statistics (e.g. mean, frequency) for a group, school, or state.",
+      description: "Fetch aggregation statistics (e.g. mean, frequency) for a group, school, or state. Requires `aggregation` parameter — typical values: competence, anforderungsbereich, gender.",
       inputSchema: {
         entityType: z.enum(["group", "school", "state"]),
         entityId: z.string(),
+        aggregation: z
+          .string()
+          .default("competence")
+          .describe("Aggregation dimension (default: competence). Other typical values: anforderungsbereich, gender."),
         type: z
           .enum(["group", "students", "group,students"])
           .optional()
           .describe("Include group-level, student-level, or both (default: group only)"),
       },
     },
-    async ({ entityType, entityId, type }) => {
+    async ({ entityType, entityId, aggregation = "competence", type }) => {
       try {
         const path = `/${entityType}s/${encodeURIComponent(entityId)}/aggregations`;
-        const data = await fetchApi(path, type ? { type } : {});
+        const params = { aggregation };
+        if (type) params.type = type;
+        const data = await fetchApi(path, params);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
           structuredContent: Array.isArray(data) ? { valueGroups: data } : data,
